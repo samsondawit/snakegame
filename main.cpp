@@ -8,6 +8,8 @@ using namespace std;
 static bool allowMove = false;
 Color white = {255, 255, 255, 255};
 Color black = {0, 0, 0, 255};
+Color red = {255, 0, 0, 255};
+
 
 int cellSize = 20;
 int cellCount = 40;
@@ -76,6 +78,50 @@ public:
     }
 };
 
+class RandomSnake {
+public:
+    deque<Vector2> body = {Vector2{10, 10}, Vector2{11, 10}, Vector2{12, 10}};
+    Vector2 direction = {1, 0};
+
+    void Draw() {
+        for (auto &segment : body) {
+            Rectangle rect = {offset + segment.x * cellSize, offset + segment.y * cellSize, (float)cellSize, (float)cellSize};
+            DrawRectangleRounded(rect, 0.5, 6, red);
+        }
+    }
+
+    void Update() {
+        
+            int randDir = GetRandomValue(0, 3);
+            switch (randDir) {
+        case 0: 
+            if (direction.y != 1) direction = {0, -1}; // Up
+            break;
+        case 1: 
+            if (direction.y != -1) direction = {0, 1};  // Down
+            break;
+        case 2: 
+            if (direction.x != 1) direction = {-1, 0}; // Left
+            break;
+        case 3: 
+            if (direction.x != -1) direction = {1, 0};  // Right
+            break;
+    }
+        
+        
+
+        Vector2 newHead = Vector2Add(body.front(), direction);
+        
+        if (newHead.x < 0) newHead.x = 0;
+        if (newHead.y < 0) newHead.y = 0;
+        if (newHead.x >= cellCount) newHead.x = cellCount - 1;
+        if (newHead.y >= cellCount) newHead.y = cellCount - 1;
+
+        body.push_front(newHead);
+        body.pop_back(); 
+    }
+};
+
 class Food
 {
 
@@ -123,6 +169,7 @@ class Game
 {
 public:
     Snake snake = Snake();
+    RandomSnake randomSnake = RandomSnake();
     Food food = Food(snake.body);
     bool running = true;
     bool ispaused = false;
@@ -149,6 +196,7 @@ public:
     void Draw()
     {
         food.Draw();
+        randomSnake.Draw();
         snake.Draw();
         DrawText(TextFormat("Lives: %i", lives), offset - 5, offset + cellSize * cellCount + 50, 40, black);
 
@@ -159,6 +207,7 @@ public:
         if (running)
         {
             snake.Update();
+            randomSnake.Update();
             CheckCollisionWithFood();
             CheckCollisionWithEdges();
             CheckCollisionWithTail();
@@ -237,7 +286,7 @@ void CheckCollisionWithEdges()
     }
 
 
-void GameOver()
+    void GameOver()
 {
     if (lives <= 0)
     {
@@ -285,7 +334,7 @@ int main()
         }
     }   else if (game.ispaused) {
         // Render pause screen or overlay
-            DrawText("Game Paused. Press P to Resume", 100, 200, 20, BLACK);
+            DrawText("Game Paused. Press P to Resume", 100, 200, 20, black);
     }
 
 
@@ -298,7 +347,7 @@ int main()
         }
        
         if (game.lives <=0 ) {
-        DrawText("Game Over! Press R to Restart or Any Other Key to Quit", 100, 200, 20, DARKGREEN);
+        DrawText("Game Over! Press R to Restart or Any Other Key to Quit", 100, 200, 20, red);
 
         if (IsKeyPressed(KEY_R)) {
             game.ResetGame();
