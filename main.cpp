@@ -196,9 +196,11 @@ public:
     void Draw()
     {
         food.Draw();
-        randomSnake.Draw();
         snake.Draw();
         DrawText(TextFormat("Lives: %i", lives), offset - 5, offset + cellSize * cellCount + 50, 40, black);
+        if(score > 5){
+            randomSnake.Draw();
+        }
 
     }
 
