@@ -147,7 +147,7 @@ public:
     {
         DrawTexture(texture, offset + position.x * cellSize, offset + position.y * cellSize, BLACK);
     }
-
+    
     Vector2 GenerateRandomCell()
     {
         float x = GetRandomValue(0, cellCount - 1);
@@ -165,19 +165,33 @@ public:
         return position;
     }
 };
+class SpecialFood : public Food {
+public:
+    SpecialFood(deque<Vector2> snakeBody) : Food(snakeBody) {
+        // Load a different texture for special food
+        UnloadTexture(texture); // Unload the base class texture
+        Image image = LoadImage("Graphics/special_food.png");
+        texture = LoadTextureFromImage(image);
+        UnloadImage(image);
+        position = GenerateRandomPos(snakeBody);
+    }
+
+};
 
 class Game
 {
 public:
     Snake snake = Snake();
     RandomSnake randomSnake = RandomSnake();
-    Food food = Food(snake.body);
+    Food* regularFood = new Food(snake.body);
+    SpecialFood* specialFood = nullptr;
     bool running = true;
     bool ispaused = false;
     int score = 0;
     int lives = 5;
     Sound eatSound;
     Sound wallSound;
+    Sound lifeSound; 
     int lastScoreIncrement = 0;
 
     Game()
@@ -185,18 +199,26 @@ public:
         InitAudioDevice();
         eatSound = LoadSound("Sounds/eat.mp3");
         wallSound = LoadSound("Sounds/wall.mp3");
+        lifeSound = LoadSound("Sounds/life.mp3");
     }
 
-    ~Game()
-    {
+    ~Game() {
+        delete regularFood;
+        if (specialFood != nullptr) {
+            delete specialFood;
+        }
         UnloadSound(eatSound);
         UnloadSound(wallSound);
+        UnloadSound(lifeSound);
         CloseAudioDevice();
     }
 
     void Draw()
     {
-        food.Draw();
+        regularFood->Draw();
+        if (specialFood != nullptr) {
+            specialFood->Draw();
+        }
         snake.Draw();
         DrawText(TextFormat("Lives: %i", lives), offset - 5, offset + cellSize * cellCount + 50, 40, black);
         if(score >= 5){
@@ -204,17 +226,28 @@ public:
         }
 
     }
+    bool ShouldGenerateSpecialFood() {
+    // Random chance when score is over 10 and lives less than 4
+        if (score >= 10 && lives < 4) {
+            return GetRandomValue(0, 10) < 3; // 30% chance to generate special food
+    }
+    return false;
+}
 
     void Update()
     {
         if (running)
         {
             snake.Update();
-            randomSnake.Update();
-            CheckCollisionWithFood();
+            CheckCollisionWithFood(regularFood);
+            if (ShouldGenerateSpecialFood() && specialFood == nullptr) {
+                specialFood = new SpecialFood(snake.body);
+        }
+            if (specialFood != nullptr) {
+                CheckCollisionWithFood(specialFood);
+            }
             CheckCollisionWithEdges();
             CheckCollisionWithTail();
-            CheckCollisionWithRandomSnake();
             if (score >= 5){
                 randomSnake.Update();
                 CheckCollisionWithRandomSnake();
@@ -222,14 +255,19 @@ public:
         }
     }
 
-    void CheckCollisionWithFood()
-    {
-        if (Vector2Equals(snake.body[0], food.position))
-        {
-            food.position = food.GenerateRandomPos(snake.body);
-            snake.addSegment = true;
-            score++;
-            PlaySound(eatSound);
+    void CheckCollisionWithFood(Food* food) {
+        if (Vector2Equals(snake.body[0], food->position)) {
+            if (food == regularFood) {
+                score++;
+                food->position = food->GenerateRandomPos(snake.body);
+                snake.addSegment = true;
+                PlaySound(eatSound);
+            } else if (food == specialFood) {
+                lives += 2;
+                PlaySound(lifeSound);
+                delete specialFood;
+                specialFood = nullptr;
+            }
         }
     }
 
@@ -292,31 +330,39 @@ public:
     void TogglePause(){
             ispaused = !ispaused;
         }
+
     void HandleInput() {
                 if (IsKeyPressed(KEY_P)) {
                     TogglePause();
                 }
                 if (!ispaused){
-                if (IsKeyPressed(KEY_UP) && snake.direction.y != 1 && allowMove) {
-                    snake.direction = {0, -1};
-                    allowMove = false;
-                } else if (IsKeyPressed(KEY_DOWN) && snake.direction.y != -1 && allowMove) {
-                    snake.direction = {0, 1};
-                    allowMove = false;
-                } else if (IsKeyPressed(KEY_LEFT) && snake.direction.x != 1 && allowMove) {
-                    snake.direction = {-1, 0};
-                    allowMove = false;
-                } else if (IsKeyPressed(KEY_RIGHT) && snake.direction.x != -1 && allowMove) {
-                    snake.direction = {1, 0};
-                    allowMove = false;
-                } 
-            }
+                    if (IsKeyPressed(KEY_UP) && snake.direction.y != 1 && allowMove) {
+                        snake.direction = {0, -1};
+                        allowMove = false;
+                    } else if (IsKeyPressed(KEY_DOWN) && snake.direction.y != -1 && allowMove) {
+                        snake.direction = {0, 1};
+                        allowMove = false;
+                    } else if (IsKeyPressed(KEY_LEFT) && snake.direction.x != 1 && allowMove) {
+                        snake.direction = {-1, 0};
+                        allowMove = false;
+                    } else if (IsKeyPressed(KEY_RIGHT) && snake.direction.x != -1 && allowMove) {
+                        snake.direction = {1, 0};
+                        allowMove = false;
+                    } 
+                }
     }
 
     // New method for resetting the game
     void ResetGame() {
         snake.Reset();
-        food.position = food.GenerateRandomPos(snake.body);
+        delete regularFood; // Delete the existing instance
+        regularFood = new Food(snake.body); // Create a new instance
+
+    // Reset special food
+    if (specialFood != nullptr) {
+        delete specialFood;
+        specialFood = nullptr;
+    }
         score = 0;
         lives = 5;
         running = true;
@@ -332,7 +378,7 @@ public:
         }
 }
 
-   void CheckCollisionWithTail()
+    void CheckCollisionWithTail()
 {
         deque<Vector2> headlessBody = snake.body;
         headlessBody.pop_front();
