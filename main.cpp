@@ -1,6 +1,7 @@
 #include <iostream>
 #include <raylib.h>
 #include <deque>
+#include <thread>
 #include <raymath.h>
 
 using namespace std;
@@ -71,6 +72,7 @@ public:
         }
     }
 
+
     void Reset()
     {
         body = {Vector2{6, 9}, Vector2{5, 9}, Vector2{4, 9}};
@@ -106,8 +108,7 @@ public:
         case 3: 
             if (direction.x != -1) direction = {1, 0};  // Right
             break;
-    }
-        
+    }    
         
 
         Vector2 newHead = Vector2Add(body.front(), direction);
@@ -198,7 +199,7 @@ public:
         food.Draw();
         snake.Draw();
         DrawText(TextFormat("Lives: %i", lives), offset - 5, offset + cellSize * cellCount + 50, 40, black);
-        if(score > 5){
+        if(score >= 5){
             randomSnake.Draw();
         }
 
@@ -213,6 +214,11 @@ public:
             CheckCollisionWithFood();
             CheckCollisionWithEdges();
             CheckCollisionWithTail();
+            CheckCollisionWithRandomSnake();
+            if (score >= 5){
+                randomSnake.Update();
+                CheckCollisionWithRandomSnake();
+            }
         }
     }
 
@@ -228,55 +234,84 @@ public:
     }
 
 
-void CheckCollisionWithEdges()
-{
-    if (snake.body[0].x == cellCount || snake.body[0].x == -1 ||
-        snake.body[0].y == cellCount || snake.body[0].y == -1)
+    void CheckCollisionWithEdges()
     {
-        lives--;
-        PlaySound(wallSound);
+        if (snake.body[0].x == cellCount || snake.body[0].x == -1 ||
+            snake.body[0].y == cellCount || snake.body[0].y == -1)
+        {
+            lives--;
+            PlaySound(wallSound);
+            if (lives <= 0) {
+                GameOver();
+            } else {
+                // Reduce the snake's length by one segment, if it's longer than one segment
+                if (snake.body.size() > 1) {
+                    snake.body.pop_back();
+                }
 
-        // Check if game is over
+                // Reposition the snake's head to a safe location
+                snake.body[0] = Vector2{max(1, min(cellCount - 2, (int)snake.body[0].x)),
+                                        max(1, min(cellCount - 2, (int)snake.body[0].y))};
+
+                // Reset direction to avoid immediate collision
+                snake.direction = {1, 0};
+        }
+    }
+}   
+    void CheckCollisionWithRandomSnake() {
+        // Check if any segment of the player's snake collides with the random snake
+        for (const auto& segment : randomSnake.body) {
+            if (Vector2Equals(snake.body[0], segment)) {
+                ReduceLife();
+                break; // Exit the loop after detecting a collision
+            }
+        }
+
+        // Check if the head of the random snake collides with any part of the player's snake
+        for (const auto& segment : snake.body) {
+            if (Vector2Equals(segment, randomSnake.body[0])) {
+                ReduceLife();
+                break; // Exit the loop after detecting a collision
+            }
+        }
+    }
+    
+    void ReduceLife() {
+        PlaySound(wallSound);
+        lives--;
+
         if (lives <= 0) {
             GameOver();
         } else {
-            // Reduce the snake's length by one segment, if it's longer than one segment
-            if (snake.body.size() > 1) {
-                snake.body.pop_back();
-            }
-
-            // Reposition the snake's head to a safe location
+            // Optionally, you can reset the snake's position or length here
+            snake.body.pop_back(); // Remove last segment as a penalty
             snake.body[0] = Vector2{max(1, min(cellCount - 2, (int)snake.body[0].x)),
                                     max(1, min(cellCount - 2, (int)snake.body[0].y))};
-
-            // Reset direction to avoid immediate collision
-            snake.direction = {1, 0};
         }
-    }
 }
-        void TogglePause(){
-        ispaused = !ispaused;
-    }
-    void HandleInput() {
-        if (IsKeyPressed(KEY_P)) {
-            TogglePause();
+    void TogglePause(){
+            ispaused = !ispaused;
         }
-        if (!ispaused){
-        if (IsKeyPressed(KEY_UP) && snake.direction.y != 1 && allowMove) {
-            snake.direction = {0, -1};
-            allowMove = false;
-        } else if (IsKeyPressed(KEY_DOWN) && snake.direction.y != -1 && allowMove) {
-            snake.direction = {0, 1};
-            allowMove = false;
-        } else if (IsKeyPressed(KEY_LEFT) && snake.direction.x != 1 && allowMove) {
-            snake.direction = {-1, 0};
-            allowMove = false;
-        } else if (IsKeyPressed(KEY_RIGHT) && snake.direction.x != -1 && allowMove) {
-            snake.direction = {1, 0};
-            allowMove = false;
-        } 
+    void HandleInput() {
+                if (IsKeyPressed(KEY_P)) {
+                    TogglePause();
+                }
+                if (!ispaused){
+                if (IsKeyPressed(KEY_UP) && snake.direction.y != 1 && allowMove) {
+                    snake.direction = {0, -1};
+                    allowMove = false;
+                } else if (IsKeyPressed(KEY_DOWN) && snake.direction.y != -1 && allowMove) {
+                    snake.direction = {0, 1};
+                    allowMove = false;
+                } else if (IsKeyPressed(KEY_LEFT) && snake.direction.x != 1 && allowMove) {
+                    snake.direction = {-1, 0};
+                    allowMove = false;
+                } else if (IsKeyPressed(KEY_RIGHT) && snake.direction.x != -1 && allowMove) {
+                    snake.direction = {1, 0};
+                    allowMove = false;
+                } 
+            }
     }
- }
 
     // New method for resetting the game
     void ResetGame() {
@@ -289,31 +324,56 @@ void CheckCollisionWithEdges()
 
 
     void GameOver()
-{
-    if (lives <= 0)
     {
-        PlaySound(wallSound); 
-        running = false; // Stop the game
-    }
+        if (lives <= 0)
+        {
+            PlaySound(wallSound); 
+            running = false; // Stop the game
+        }
 }
 
    void CheckCollisionWithTail()
 {
-    deque<Vector2> headlessBody = snake.body;
-    headlessBody.pop_front();
+        deque<Vector2> headlessBody = snake.body;
+        headlessBody.pop_front();
 
-    if (ElementInDeque(snake.body[0], headlessBody))
-    {
-        PlaySound(wallSound); 
-        lives--; 
+        if (ElementInDeque(snake.body[0], headlessBody))
+        {
+            PlaySound(wallSound); 
+            lives--; 
 
-        if (lives <= 0) {
-            GameOver();
-        }
+            if (lives <= 0) {
+                GameOver();
+            }
     }
 }
+    // private:
+    // bool shouldTerminate = false;  
+
+    // public:
+    // void terminateThreads() {
+    //     shouldTerminate = true;
+    // }
+
+    // bool isRunning() {
+    //     return !shouldTerminate && running;
+    // }
 
 };
+
+    // void UpdateRandomSnake(RandomSnake* randomSnake, Game* game) {
+    //             while (game->isRunning()) {
+    //                 randomSnake->Update();
+    //                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    //         }
+    //     };
+
+    // void UpdatePlayerSnake(Snake* snake, Game* game) {
+    //             while (game->isRunning()) {
+    //                 snake->Update();
+    //                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    //         }
+    //     };
 
 int main()
 {
@@ -323,6 +383,9 @@ int main()
     SetTargetFPS(basefps);
 
     Game game = Game();
+    // std::thread playerSnakeThread(UpdatePlayerSnake, &game.snake, &game);
+    // std::thread randomSnakeThread(UpdateRandomSnake, &game.randomSnake, &game);
+
 
     while (WindowShouldClose() == false)
     {
@@ -340,7 +403,7 @@ int main()
     }
 
 
-        if (game.score >= game.lastScoreIncrement + 10)
+        if (game.score >= game.lastScoreIncrement + 5)
         {
             basefps += 5;
             SetTargetFPS(basefps);
@@ -359,7 +422,7 @@ int main()
         CloseWindow();
         return 0;
     }
-    }
+}
 
         // Drawing
         ClearBackground(white);
@@ -370,6 +433,9 @@ int main()
 
         EndDrawing();
     }
+    // game.terminateThreads();
+    // playerSnakeThread.join();
+    // randomSnakeThread.join();
     CloseWindow();
     return 0;
 }
