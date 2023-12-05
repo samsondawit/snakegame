@@ -10,7 +10,7 @@
 
 ## Introduction
 
-In the developed Snake game, the Raylib library has been employed, renowned for its simplicity and efficiency in game development. The game showcases an advanced version of the classic Snake game with additional features and gameplay elements. Valuable insights and code components were obtained from the GitHub repository by (educ8s, 2023) and YouTube video titled “Creating Simple Snake Game in C++” (ProgrammingKnowledge, 2021).
+This project report presents the development of an enhanced Snake game using the Raylib library. Raylib was chosen for its efficiency and ease of use in game development, particularly for graphics and input handling. The project leverages C++17 and various Raylib modules, including Deque for data management and Raymath for mathematical operations. The game introduces advanced features to the classic Snake game, including an AI-controlled snake, special food items, and dynamic difficulty adjustment.
 
 ---
 
@@ -18,7 +18,7 @@ In the developed Snake game, the Raylib library has been employed, renowned for 
 
 ### C++
 
-As the primary programming language, C++ serves as the foundation for developing the game's logic and mechanics. C++ 17 with the MinGW g++ compiler is used. ([DevDocs, 2023](https://devdocs.io/cpp/))
+A C library used for graphics and input handling, making it suitable for game development. It is an open-source and cross-platform library, making it accessible to developers on various operating systems, including Windows, macOS, Linux, Android, and more. Raylib's primary goal is to provide a straightforward and efficient framework for creating 2D and 3D games, simulations, and interactive applications.  ([DevDocs, 2023](https://devdocs.io/cpp/))
 
 ### Raylib
 
@@ -26,11 +26,11 @@ A C library used for graphics and input handling, suitable for game development.
 
 ### Deque
 
-A C++ data structure used to manage the snake's body as a queue, enabling efficient control and manipulation of the snake's segments. ([Double-ended queue, 2023](https://en.wikipedia.org/wiki/Double-ended_queue))
+A C++ data structure used to manage the snake's body as a queue. This data structure enables efficient control and manipulation of the snake's segments, ensuring that the game mechanics run smoothly. ([Double-ended queue, 2023](https://en.wikipedia.org/wiki/Double-ended_queue))
 
 ### Raymath
 
-A library for mathematical operations in Raylib, used for vector calculations crucial in movement and collision detection. ([Raylib, n.d](https://www.raylib.com/))
+A library for mathematical operations in Raylib, used for vector calculations. It provides functions for vector operations like addition and subtraction, which are essential for calculating the snake's new position as it moves in different directions. It supports distance calculations between points, which are crucial for detecting collisions between the snake's head and the food items or boundaries of the game grid. ([Raylib, n.d](https://www.raylib.com/))
 
 ---
 
@@ -40,23 +40,25 @@ The Snake Game project is designed with an object-oriented approach, encapsulati
 
 ### Snake Class
 
-The Snake class is responsible for operations like drawing, updating position, and resetting. The snake’s body is managed as a deque of `Vector2` objects.
+The Snake class is at the heart of the game. This class is responsible for the fundamental operations of the snake such as drawing itself on the display, updating its position, and resetting when necessary. The snake’s body is managed as a deque of `Vector2` objects. This allows the addition and removal of segments to simulate movement and growth. The `Update` method in the snake class is important as it advances the snake in its current direction, and handles the addition of new segments when the snake consumes food. Moreover, the `Reset` method resets the snake’s position and direction if the player decides to restart. 
 
 ### RandomSnake Class
 
-Inherited from the Snake class, this class moves randomly and appears when the player's score is 5 or above.
+This class is inherited from the `snake class`. This snake moves randomly (using a random number generator which dictates its movements). It changes directions at random, creating unexpected obstacles and dynamic interactions within the game space. The `RandomSnake` is drawn onto the board when the `score` of the player is 5 or above. 
 
 ### Food Class
 
-Responsible for generating and rendering food on the game board, ensuring that food items do not overlap the snake's body.
+The Food class will be tasked with generating and rendering the `regularfood` on the game board. It will ensure that `regularfood` items appear randomly on the grid without overlapping the snake's body. The `regularfood`, represented by an apple, is loaded from an image file. When the snake eats this food, its `score` is increased by one and its `segment` is also increased by one.  
 
 ### SpecialFood Class
 
-A subclass of the Food class, represents a special food item that offers extra lives under certain conditions.
+This class is inherited from the `food class`. It represents a `specialfood` item (represented by a heart) that offers 2 more lives if the snake eats it. However, this heart does not appear all the time. There is a 30% chance of it appearing if the snake’s life is less than 4 and the score is 10 or above. This is done to make the game more interesting.
 
 ### Game Class
 
-Serves as the central hub for managing the game state, updating entities, and handling collisions. Incorporates a scoring mechanism and audio feedback, and controls the game's difficulty level.
+The Game class serves as the central hub for managing the overall game state. This class ties together all elements of the game, managing the state, updating entities, and handling collisions. The snake's interactions with food items are meticulously checked; consuming regular food increases the score and lengthens the snake, while special food provides additional lives. It also monitors collisions with the game boundaries, the snake's own body and the RandomSnake.  Additionally, the class incorporates a scoring mechanism and audio feedback.
+An essential aspect of the Game class is its handling of game states, such as running, pausing, and restarting the game. It also controls the difficulty level, dynamically adjusting the game's speed based on the player's score. It increases the game speed by `5FPS` (base is 30) each time the player gets 5 scores. 
+The game's primary loop, located in the Game Class, will continually update the game state, respond to player input (arrow key presses), and render all in-game elements. 
 
 ---
 
@@ -64,15 +66,17 @@ Serves as the central hub for managing the game state, updating entities, and ha
 
 ### Pausing, Restarting, Exiting
 
-The game includes pause functionality with the "P" key and can be quit anytime with the "ESC" key. On game over (lives <= 0), the player is prompted to restart or quit.
+The game includes a pause functionality when the key “P” is pressed. It can be resumed the same way. 
+The game can be quit at any time once “ESC” is pressed. 
+When the game is over (lives <= 0), the player will be prompted to either press “R” to restart or press any other key to quit. 
 
 ### Increasing Difficulty
 
-As players progress, the game's difficulty increases with a faster-moving snake and the appearance of a random snake.
+The game has an increasing degree of difficulty. As players progress, the snake moves faster and there will be a random snake that appears once the score is 5 or more. If the play snake collides with the random snake or if the random snake collides with any part of the player snake, the player snake’s life is reduced by one, and the segment is reduced by one. 
 
 ### Adding Lives
 
-Special food represented by a heart appears under certain conditions, increasing the snake's lives by 2 when consumed.
+The snake game dynamically draws a `specialfood` that is represented by a heart. This heart appears in a special condition as mentioned above, and if the player snake eats this heart, lives will be increased by 2. 
 
 ---
 
@@ -80,19 +84,19 @@ Special food represented by a heart appears under certain conditions, increasing
 
 ### Intelligent AI Opponent
 
-Integration of Q-learning or deep reinforcement learning for a smart AI opponent is planned.
+It is planned to integrate a Q-learning or deep reinforcement learning algorithm to simulate a smart AI opponent that learns from the player's moves and adapts its strategy over time. The AI opponent will learn the player's behavior and develop tactics to challenge the player.
 
 ### More Random Snakes
 
-A menu to choose difficulty levels and game types is planned for future updates.
+It is planned to integrate a menu where users can choose difficulty level and game types (classic, with AI, etc). This proved challenging to realize given the amount of time available and the basic libraries used. 
 
 ### Customization
 
-Allowing user customization for parameters like speed, size, colors is envisioned.
+It is planned to make the game more interactive by allowing the user to determine parameters like speed, size, colors.
 
 ### Advanced Score and High Score Tracking
 
-Implementing a more advanced score system with levels and high score management is planned.
+A more advanced score system could be implemented that includes levels, and high score management by saving previous high scores to file. 
 
 ### More Power-Ups and Special Items
 
@@ -100,7 +104,7 @@ Addition of more power-ups and special items beyond the special food is consider
 
 ### Parallel Processing
 
-Improvements in multi-threading and synchronization are planned for future development.
+Although it is possible to use multi-threading by uncommenting some lines in the code, the synchronization of the game is not perfect and needs more thought. It is planned to achieve this through time. 
 
 ---
 
