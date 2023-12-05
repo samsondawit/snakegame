@@ -254,7 +254,8 @@ public:
             }
         }
     }
-
+    
+    private:
     void CheckCollisionWithFood(Food* food) {
         if (Vector2Equals(snake.body[0], food->position)) {
             if (food == regularFood) {
@@ -271,31 +272,19 @@ public:
         }
     }
 
-
+    private:
     void CheckCollisionWithEdges()
     {
         if (snake.body[0].x == cellCount || snake.body[0].x == -1 ||
             snake.body[0].y == cellCount || snake.body[0].y == -1)
         {
-            lives--;
-            PlaySound(wallSound);
-            if (lives <= 0) {
-                GameOver();
-            } else {
-                // Reduce the snake's length by one segment, if it's longer than one segment
-                if (snake.body.size() > 1) {
-                    snake.body.pop_back();
-                }
-
-                // Reposition the snake's head to a safe location
-                snake.body[0] = Vector2{max(1, min(cellCount - 2, (int)snake.body[0].x)),
-                                        max(1, min(cellCount - 2, (int)snake.body[0].y))};
-
+            
+                ReduceLife();
                 // Reset direction to avoid immediate collision
                 snake.direction = {1, 0};
         }
     }
-}   
+    
     void CheckCollisionWithRandomSnake() {
         // Check if any segment of the player's snake collides with the random snake
         for (const auto& segment : randomSnake.body) {
@@ -314,19 +303,42 @@ public:
         }
     }
     
+    void CheckCollisionWithTail()
+    {
+        deque<Vector2> headlessBody = snake.body;
+        headlessBody.pop_front();
+
+        if (ElementInDeque(snake.body[0], headlessBody))
+        {
+            PlaySound(wallSound); 
+            lives--; 
+            if (snake.body.size() > 1) {
+                    snake.body.pop_back();
+            }
+
+            if (lives <= 0) {
+                GameOver();
+            }
+    }
+}
+   
     void ReduceLife() {
         PlaySound(wallSound);
         lives--;
 
+        if (snake.body.size() > 1) {
+                    snake.body.pop_back();
+                }
+                
         if (lives <= 0) {
             GameOver();
         } else {
             // Optionally, you can reset the snake's position or length here
-            snake.body.pop_back(); // Remove last segment as a penalty
             snake.body[0] = Vector2{max(1, min(cellCount - 2, (int)snake.body[0].x)),
                                     max(1, min(cellCount - 2, (int)snake.body[0].y))};
         }
-}
+}   
+    public:
     void TogglePause(){
             ispaused = !ispaused;
         }
@@ -378,21 +390,7 @@ public:
         }
 }
 
-    void CheckCollisionWithTail()
-{
-        deque<Vector2> headlessBody = snake.body;
-        headlessBody.pop_front();
 
-        if (ElementInDeque(snake.body[0], headlessBody))
-        {
-            PlaySound(wallSound); 
-            lives--; 
-
-            if (lives <= 0) {
-                GameOver();
-            }
-    }
-}
     // private:
     // bool shouldTerminate = false;  
 
