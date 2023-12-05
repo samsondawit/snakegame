@@ -109,6 +109,7 @@ public:
         case 3: 
             if (direction.x != -1) direction = {1, 0};  // Right
             break;
+            
     }    
         
         Vector2 newHead = Vector2Add(body.front(), direction);
