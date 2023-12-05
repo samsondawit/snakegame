@@ -44,22 +44,28 @@ bool EventTriggered(double interval)
 class Snake
 {
 public:
-    deque<Vector2> body = {Vector2{6, 9}, Vector2{5, 9}, Vector2{4, 9}};
-    Vector2 direction = {1, 0};
+    deque<Vector2> body;
+    Vector2 direction;
     bool addSegment = false;
+    Color color;
 
-    void Draw()
+    Snake() : color(black), direction({1, 0}), body({{6, 9}, {5, 9}, {4, 9}}) {}
+    Snake(Color snakeColor) : color(snakeColor), direction({1, 0}), body({{6, 9}, {5, 9}, {4, 9}}) {}
+
+    virtual ~Snake() {}
+
+    virtual void Draw()
     {
         for (unsigned int i = 0; i < body.size(); i++)
         {
             float x = body[i].x;
             float y = body[i].y;
             Rectangle segment = Rectangle{offset + x * cellSize, offset + y * cellSize, (float)cellSize, (float)cellSize};
-            DrawRectangleRounded(segment, 0.5, 6, black);
+            DrawRectangleRounded(segment, 0.5, 6, color);
         }
     }
 
-    void Update()
+    virtual void Update()
     {
         body.push_front(Vector2Add(body[0], direction));
         if (addSegment == true)
@@ -80,19 +86,14 @@ public:
     }
 };
 
-class RandomSnake {
+class RandomSnake : public Snake {
 public:
-    deque<Vector2> body = {Vector2{10, 10}, Vector2{11, 10}, Vector2{12, 10}};
-    Vector2 direction = {1, 0};
-
-    void Draw() {
-        for (auto &segment : body) {
-            Rectangle rect = {offset + segment.x * cellSize, offset + segment.y * cellSize, (float)cellSize, (float)cellSize};
-            DrawRectangleRounded(rect, 0.5, 6, red);
-        }
+    RandomSnake() : Snake(red) {
+    body = {Vector2{10, 10}, Vector2{11, 10}, Vector2{12, 10}};
+    direction = {1, 0};
     }
 
-    void Update() {
+    void Update() override {
         
             int randDir = GetRandomValue(0, 3);
             switch (randDir) {
@@ -110,14 +111,14 @@ public:
             break;
     }    
         
-
         Vector2 newHead = Vector2Add(body.front(), direction);
         
-        if (newHead.x < 0) newHead.x = 0;
-        if (newHead.y < 0) newHead.y = 0;
-        if (newHead.x >= cellCount) newHead.x = cellCount - 1;
-        if (newHead.y >= cellCount) newHead.y = cellCount - 1;
-
+        newHead.x = max(0, min(cellCount - 1, (int)newHead.x));
+        newHead.y = max(0, min(cellCount - 1, (int)newHead.y));
+        // if (newHead.x < 0) newHead.x = 0;
+        // if (newHead.y < 0) newHead.y = 0;
+        // if (newHead.x >= cellCount) newHead.x = cellCount - 1;
+        // if (newHead.y >= cellCount) newHead.y = cellCount - 1;
         body.push_front(newHead);
         body.pop_back(); 
     }
@@ -181,8 +182,8 @@ public:
 class Game
 {
 public:
-    Snake snake = Snake();
-    RandomSnake randomSnake = RandomSnake();
+    Snake snake;
+    RandomSnake randomSnake;
     Food* regularFood = new Food(snake.body);
     SpecialFood* specialFood = nullptr;
     bool running = true;
@@ -194,7 +195,7 @@ public:
     Sound lifeSound; 
     int lastScoreIncrement = 0;
 
-    Game()
+    Game() : snake(), randomSnake()
     {
         InitAudioDevice();
         eatSound = LoadSound("Sounds/eat.mp3");
