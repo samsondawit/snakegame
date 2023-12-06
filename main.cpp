@@ -16,8 +16,9 @@ int cellSize = 20;
 int cellCount = 40;
 int offset = 90;
 
-double lastUpdateTime = 0;
+double lastUpdateTime = 0; // Stores the last time the game was updated.
 
+// Checks if a Vector2 element is in a given deque of Vector2 elements.
 bool ElementInDeque(Vector2 element, deque<Vector2> deque)
 {
     for (unsigned int i = 0; i < deque.size(); i++)
@@ -30,6 +31,7 @@ bool ElementInDeque(Vector2 element, deque<Vector2> deque)
     return false;
 }
 
+// Returns true if a certain time interval has passed since last update.
 bool EventTriggered(double interval)
 {
     double currentTime = GetTime();
@@ -44,18 +46,22 @@ bool EventTriggered(double interval)
 class Snake
 {
 public:
-    deque<Vector2> body;
-    Vector2 direction;
-    bool addSegment = false;
-    Color color;
+    deque<Vector2> body;        // Stores the positions of the snake's body segments.
+    Vector2 direction;          // The direction the snake is moving in.
+    bool addSegment = false;    // Flag to determine whether to add a segment to the snake.
+    Color color;                // Color of the snake.
 
+    // Constructors for the Snake class.
     Snake() : color(black), direction({1, 0}), body({{6, 9}, {5, 9}, {4, 9}}) {}
     Snake(Color snakeColor) : color(snakeColor), direction({1, 0}), body({{6, 9}, {5, 9}, {4, 9}}) {}
 
+    // Virtual destructor for proper cleanup in derived classes.
     virtual ~Snake() {}
 
+    // Draws the snake on the screen.
     virtual void Draw()
     {
+        // Loop through each segment of the snake and draw it.
         for (unsigned int i = 0; i < body.size(); i++)
         {
             float x = body[i].x;
@@ -65,12 +71,13 @@ public:
         }
     }
 
+    // Updates the state of the snake.
     virtual void Update()
     {
-        body.push_front(Vector2Add(body[0], direction));
+        body.push_front(Vector2Add(body[0], direction)); // Moves the snake in the current direction.
         if (addSegment == true)
         {
-            addSegment = false;
+            addSegment = false; 
         }
         else
         {
@@ -88,15 +95,19 @@ public:
 
 class RandomSnake : public Snake {
 public:
+    // Constructor initializing the random snake with a red color.
     RandomSnake() : Snake(red) {
     body = {Vector2{10, 10}, Vector2{11, 10}, Vector2{12, 10}};
     direction = {1, 0};
     }
 
+    // Override the update method for random movement.
     void Update() override {
         
-            int randDir = GetRandomValue(0, 3);
-            switch (randDir) {
+            int randDir = GetRandomValue(0, 3); // Randomly changes the direction of the snake.
+
+            switch (randDir) { 
+        // Ensures the snake doesn't immediately reverse its direction.
         case 0: 
             if (direction.y != 1) direction = {0, -1}; // Up
             break;
@@ -111,7 +122,8 @@ public:
             break;
             
     }    
-        
+
+        // Ensures the snake doesn't move outside the game grid.
         Vector2 newHead = Vector2Add(body.front(), direction);
         
         newHead.x = max(0, min(cellCount - 1, (int)newHead.x));
@@ -196,6 +208,7 @@ public:
     Sound lifeSound; 
     int lastScoreIncrement = 0;
 
+    // Constructor and Destructor for managing resources.
     Game() : snake(), randomSnake()
     {
         InitAudioDevice();
@@ -274,7 +287,6 @@ public:
         }
     }
 
-    private:
     void CheckCollisionWithEdges()
     {
         if (snake.body[0].x == cellCount || snake.body[0].x == -1 ||
