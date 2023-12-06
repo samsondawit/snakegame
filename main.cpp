@@ -179,6 +179,7 @@ public:
         return position;
     }
 };
+
 class SpecialFood : public Food {
 public:
     SpecialFood(deque<Vector2> snakeBody) : Food(snakeBody) {
@@ -234,13 +235,16 @@ public:
         if (specialFood != nullptr) {
             specialFood->Draw();
         }
+
         snake.Draw();
         DrawText(TextFormat("Lives: %i", lives), offset - 5, offset + cellSize * cellCount + 50, 40, black);
+
         if(score >= 5){
             randomSnake.Draw();
         }
 
     }
+
     bool ShouldGenerateSpecialFood() {
     // Random chance when score is over 10 and lives less than 4
         if (score >= 10 && lives < 4) {
@@ -248,6 +252,7 @@ public:
     }
     return false;
 }
+
 
     void Update()
     {
@@ -269,7 +274,8 @@ public:
             }
         }
     }
-    
+
+    // Private methods for collision detection and handling.
     private:
     void CheckCollisionWithFood(Food* food) {
         if (Vector2Equals(snake.body[0], food->position)) {
@@ -278,6 +284,7 @@ public:
                 food->position = food->GenerateRandomPos(snake.body);
                 snake.addSegment = true;
                 PlaySound(eatSound);
+                
             } else if (food == specialFood) {
                 lives += 2;
                 PlaySound(lifeSound);
@@ -304,7 +311,7 @@ public:
         for (const auto& segment : randomSnake.body) {
             if (Vector2Equals(snake.body[0], segment)) {
                 ReduceLife();
-                break; // Exit the loop after detecting a collision
+                break; 
             }
         }
 
@@ -347,11 +354,12 @@ public:
         if (lives <= 0) {
             GameOver();
         } else {
-            // Optionally, you can reset the snake's position or length here
+            // restricts the head's position to be between 1 and cellCount - 2 for both x and y coordinates.
             snake.body[0] = Vector2{max(1, min(cellCount - 2, (int)snake.body[0].x)),
                                     max(1, min(cellCount - 2, (int)snake.body[0].y))};
         }
 }   
+    // Methods for game state management.
     public:
     void TogglePause(){
             ispaused = !ispaused;
